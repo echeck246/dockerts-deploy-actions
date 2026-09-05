@@ -1,4 +1,4 @@
-# biodata
+# biodataform
 
 A small full-stack app for capturing and listing **biodata records** (name, contact,
 date of birth, sex, height/weight, blood type, notes). It is deliberately built as
@@ -64,12 +64,12 @@ make up                   # == docker compose up -d --build
 
 Then:
 
-| what              | where                                   |
-|-------------------|-----------------------------------------|
-| UI                | http://localhost:3000                   |
-| API health        | http://localhost:8000/health            |
-| API records       | http://localhost:8000/api/v1/bio-records|
-| Postgres          | `localhost:5433` (user/pass `biodata`)  |
+| what        | where                                    |
+| ----------- | ---------------------------------------- |
+| UI          | http://localhost:3000                    |
+| API health  | http://localhost:8000/health             |
+| API records | http://localhost:8000/api/v1/bio-records |
+| Postgres    | `localhost:5433` (user/pass `biodata`)   |
 
 Useful targets:
 
@@ -131,19 +131,19 @@ make lint && make test
 Copy `.env.example` → `.env`. Nothing secret is committed; compose reads `.env`
 and falls back to the defaults shown below.
 
-| variable             | service   | default                                                      | notes |
-|----------------------|-----------|--------------------------------------------------------------|-------|
-| `POSTGRES_USER`      | db        | `biodata`                                                    | |
-| `POSTGRES_PASSWORD`  | db        | `biodata`                                                    | change for anything non-local |
-| `POSTGRES_DB`        | db        | `biodata`                                                    | |
-| `POSTGRES_HOST_PORT` | db        | `5433`                                                       | host port mapped to container `5432` |
-| `DATABASE_URL`       | backend   | `postgresql+psycopg://biodata:biodata@db:5432/biodata`       | SQLAlchemy URL; use `localhost:5433` off-compose |
-| `CORS_ORIGINS`       | backend   | `http://localhost:3000`                                      | comma separated |
-| `LOG_LEVEL`          | backend   | `INFO`                                                       | |
-| `BACKEND_HOST_PORT`  | backend   | `8000`                                                       | |
-| `BACKEND_URL`        | frontend  | `http://backend:8000`                                        | **server-side only**, never exposed to the browser |
-| `FRONTEND_HOST_PORT` | frontend  | `3000`                                                       | |
-| `TEST_DATABASE_URL`  | tests/CI  | see `.env.example`                                           | database the backend test suite targets |
+| variable             | service  | default                                                | notes                                              |
+| -------------------- | -------- | ------------------------------------------------------ | -------------------------------------------------- |
+| `POSTGRES_USER`      | db       | `biodata`                                              |                                                    |
+| `POSTGRES_PASSWORD`  | db       | `biodata`                                              | change for anything non-local                      |
+| `POSTGRES_DB`        | db       | `biodata`                                              |                                                    |
+| `POSTGRES_HOST_PORT` | db       | `5433`                                                 | host port mapped to container `5432`               |
+| `DATABASE_URL`       | backend  | `postgresql+psycopg://biodata:biodata@db:5432/biodata` | SQLAlchemy URL; use `localhost:5433` off-compose   |
+| `CORS_ORIGINS`       | backend  | `http://localhost:3000`                                | comma separated                                    |
+| `LOG_LEVEL`          | backend  | `INFO`                                                 |                                                    |
+| `BACKEND_HOST_PORT`  | backend  | `8000`                                                 |                                                    |
+| `BACKEND_URL`        | frontend | `http://backend:8000`                                  | **server-side only**, never exposed to the browser |
+| `FRONTEND_HOST_PORT` | frontend | `3000`                                                 |                                                    |
+| `TEST_DATABASE_URL`  | tests/CI | see `.env.example`                                     | database the backend test suite targets            |
 
 ---
 
@@ -151,19 +151,19 @@ and falls back to the defaults shown below.
 
 Backend, prefix `/api/v1` (health is bare `/health`):
 
-| method | path                       | notes |
-|--------|----------------------------|-------|
-| GET    | `/health`                  | `200 {"status":"ok","database":"ok"}`; `503` with `"database":"error"` if the DB ping fails |
-| POST   | `/api/v1/bio-records`      | requires `Idempotency-Key` header (8..128 chars). `201` created · `200` replay of an identical body · `409` same key with a *different* body · `422` validation error |
-| GET    | `/api/v1/bio-records`      | `?limit=` (1..100, default 20) `&offset=` (>= 0, default 0) → `{"items":[…],"total":int,"limit":int,"offset":int}`, ordered `created_at DESC` |
-| GET    | `/api/v1/bio-records/{id}` | `200` record · `404` unknown id |
+| method | path                       | notes                                                                                                                                                                 |
+| ------ | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GET    | `/health`                  | `200 {"status":"ok","database":"ok"}`; `503` with `"database":"error"` if the DB ping fails                                                                           |
+| POST   | `/api/v1/bio-records`      | requires `Idempotency-Key` header (8..128 chars). `201` created · `200` replay of an identical body · `409` same key with a _different_ body · `422` validation error |
+| GET    | `/api/v1/bio-records`      | `?limit=` (1..100, default 20) `&offset=` (>= 0, default 0) → `{"items":[…],"total":int,"limit":int,"offset":int}`, ordered `created_at DESC`                         |
+| GET    | `/api/v1/bio-records/{id}` | `200` record · `404` unknown id                                                                                                                                       |
 
 Frontend proxy route handlers (what the browser actually calls):
 
-| method | path                  | forwards to |
-|--------|-----------------------|-------------|
-| POST   | `/api/bio-records`    | `POST /api/v1/bio-records`, passing through the client-generated `Idempotency-Key` and the backend's status + JSON verbatim |
-| GET    | `/api/bio-records`    | `GET /api/v1/bio-records?limit=&offset=` |
+| method | path               | forwards to                                                                                                                 |
+| ------ | ------------------ | --------------------------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/bio-records` | `POST /api/v1/bio-records`, passing through the client-generated `Idempotency-Key` and the backend's status + JSON verbatim |
+| GET    | `/api/bio-records` | `GET /api/v1/bio-records?limit=&offset=`                                                                                    |
 
 A record stores the columns of `bio_records`; `age` and `bmi` are **derived on
 read** and never stored.
@@ -197,7 +197,7 @@ on every attempt, including retries.
 - The table has a **UNIQUE constraint on `idempotency_key`**, and the insert uses
   on-conflict handling — not a read-then-write, which would race under concurrency.
 - First request with a key → **`201`** and the new record.
-- Same key, byte-identical body → **`200`** and the *same* record, unchanged. No
+- Same key, byte-identical body → **`200`** and the _same_ record, unchanged. No
   duplicate row, no second side effect.
 - Same key, different body → **`409 idempotency_key_reuse`**, so a key is never
   silently reused for different data.
@@ -213,11 +213,11 @@ payload twice with one key against the real stack and fails unless the first is
 `.github/workflows/ci.yml` runs on every push and pull request, with
 `concurrency` cancelling superseded runs and `permissions: contents: read`.
 
-| job             | what it does |
-|-----------------|--------------|
-| `backend`       | `postgres:16` service container (health-gated), `TEST_DATABASE_URL` set, uv installed via `astral-sh/setup-uv` with caching, then `uv sync --frozen` → `ruff check` → `ruff format --check` → `mypy src` → `pytest -q` |
-| `frontend`      | `actions/setup-node@v4`, Node 22, npm cache, then `npm ci` → `npm run lint` → `npm run typecheck` → `npm run build` → `npm test` |
-| `docker`        | builds **both** images with buildx / `docker/build-push-action` using GitHub Actions layer cache. **Build only — nothing is pushed.** |
+| job             | what it does                                                                                                                                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `backend`       | `postgres:16` service container (health-gated), `TEST_DATABASE_URL` set, uv installed via `astral-sh/setup-uv` with caching, then `uv sync --frozen` → `ruff check` → `ruff format --check` → `mypy src` → `pytest -q`   |
+| `frontend`      | `actions/setup-node@v4`, Node 22, npm cache, then `npm ci` → `npm run lint` → `npm run typecheck` → `npm run build` → `npm test`                                                                                         |
+| `docker`        | builds **both** images with buildx / `docker/build-push-action` using GitHub Actions layer cache. **Build only — nothing is pushed.**                                                                                    |
 | `compose-smoke` | needs the three above; `docker compose up -d --build`, waits for `/health` and the frontend to answer, runs the idempotent-replay assertion, dumps `docker compose logs` on failure, and `docker compose down -v` always |
 
 `.github/dependabot.yml` keeps uv, npm, Docker base images and GitHub Actions
@@ -238,5 +238,7 @@ Makefile            up / down / logs / migrate / test / lint / build / clean
 .env.example        every knob, with safe local defaults
 CONTRACT.md         the shared spec all three services are built against
 ```
+
 # tsexample
+
 # dockerts-deploy-actions
